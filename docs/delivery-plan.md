@@ -20,7 +20,7 @@ Every value below is read from environment variables (or a `.env` file locally).
 
 | Setting | Default | What it controls |
 | --- | --- | --- |
-| `LLM_MODEL` | `gemini-2.5-flash` (the PRD model) | The model used by all three agents. Other providers go through ADK's LiteLLM wrapper using a model string such as `provider/model-name`. |
+| `LLM_MODEL` | `gemini-3.5-flash-lite` | The model used by all three agents. Other providers go through ADK's LiteLLM wrapper using a model string such as `provider/model-name`. |
 | `GOOGLE_API_KEY` | none (required for the default model) | Gemini key from Google AI Studio. For another provider, set that provider's own standard key variable instead. |
 | `DATA_PROVIDER` | `mock` | `mock` reads JSON data files; `google_places` calls Google Places API (New). |
 | `PLACES_API_KEY` | none | Needed only when `DATA_PROVIDER=google_places`. |
@@ -54,7 +54,7 @@ No cloud account is needed for development. Everything below is free, and a Goog
 
 4. Install Apple command line tools: `xcode-select --install`
 5. Install Homebrew from brew.sh (copy the one-line installer from that site).
-6. Install the tools: `brew install python@3.12 git gitleaks`. `gitleaks` scans your commits for secrets before they reach the public repository.
+6. Install the tools: `brew install git gitleaks` (Python 3.14 is already installed; check `python3 --version`). `gitleaks` scans your commits for secrets before they reach the public repository.
 7. Install the editor: `brew install --cask visual-studio-code`, then add the VS Code Python extension.
 8. Docker Desktop is needed from Friday to test the container locally. Check its licence terms for personal use, and install it by Thursday night.
 9. Claude Code is optional for coding help; your Claude Pro plan covers it.
@@ -65,7 +65,7 @@ No cloud account is needed for development. Everything below is free, and a Goog
 
 ```bash
 git clone https://github.com/<your-username>/travel-concierge-adk.git && cd travel-concierge-adk
-python3.12 -m venv .venv && source .venv/bin/activate
+python3 -m venv .venv && source .venv/bin/activate
 mkdir agents providers data tests
 touch agents/__init__.py agents/coordinator.py agents/attractions_agent.py agents/dining_agent.py
 touch providers/__init__.py config.py main.py .env.example
@@ -176,7 +176,7 @@ Nothing is deployed in this plan. The repository only has to be ready, so that g
 
 What the repository must contain:
 
-- A `Dockerfile` (Python 3.12 slim) that installs `requirements.txt` and starts `uvicorn main:app --host 0.0.0.0 --port $PORT`, plus `.dockerignore`.
+- A `Dockerfile` (`python:3.14-slim` image) that installs `requirements.txt` and starts `uvicorn main:app --host 0.0.0.0 --port $PORT`, plus `.dockerignore`.
 - All behaviour set through the environment variables in the BYOK table. No host name, region or cloud service is written anywhere in the code.
 - `GET /health` and JSON logs to standard output, which every container host can read.
 - `production_live_steps.md`, written so that you or anyone else can follow it without editing code.
