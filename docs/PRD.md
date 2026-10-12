@@ -72,7 +72,7 @@ The source overview mentions booking and preference forms as potential A2UI capa
 | Area | Assumption or risk | Requirement or mitigation |
 | --- | --- | --- |
 | Data sources | Specialist tools use mock data, not live provider integrations. | Label or otherwise distinguish demo recommendations from verified live information in any user-facing production client. |
-| Model behavior | All three agents use `gemini-2.5-flash`. Model behavior and tool selection can vary. | Evaluate representative requests and handle missing, malformed, or incomplete results. |
+| Model behavior | All three agents use `gemini-3.5-flash-lite`. Model behavior and tool selection can vary. | Evaluate representative requests and handle missing, malformed, or incomplete results. |
 | ADK compatibility | Google ADK APIs, event structures, session interfaces, and import paths may evolve. | Pin validated dependency versions for releases and verify API compatibility when upgrading. |
 | A2UI compatibility | A2UI conventions and supported component schemas may evolve. | Validate payload shape and supported component types against the target client contract. |
 | Session lifecycle | `InMemorySessionService` is process-local and not durable across restarts. | Retain it for the demo; replace it with a suitable persistent session implementation before production if continuity is required. |
@@ -98,7 +98,7 @@ travel_agent_project/
 
 - Python and FastAPI: Provide the HTTP boundary, request validation through Pydantic, asynchronous request handling, and error-to-HTTP mapping.
 - Google ADK: Provides `LlmAgent`, specialist delegation, `Runner`, and session management.
-- Gemini (`gemini-2.5-flash`): Interprets natural-language intent, selects applicable specialists, and synthesizes results.
+- Gemini (`gemini-3.5-flash-lite`): Interprets natural-language intent, selects applicable specialists, and synthesizes results.
 - A2UI: Defines declarative response components such as `CardList` and `TextCard`.
 - Mock tool backends: Make the prototype demonstrable without external provider dependencies.
 - Uvicorn: Serves the FastAPI application; port `8000` is the reference local-development port.
@@ -106,7 +106,7 @@ travel_agent_project/
 
 Shared components should be initialized at the application boundary rather than duplicated across agents. `main.py` owns the FastAPI application, `InMemorySessionService`, and `Runner`; agent modules define their respective agent and tool behavior. All agents share the configured Gemini access and the ADK execution lifecycle. A compatible client is responsible for rendering the returned A2UI payload.
 
-The reference dependency baseline is `google-adk>=0.1.0`, `fastapi>=0.110.0`, `uvicorn>=0.28.0`, `pydantic>=2.0.0`, and `python-dotenv>=1.0.0`. These minimum versions are source-derived, not a production compatibility guarantee. A release should use a validated, reproducible dependency lock and verify current ADK and A2UI interfaces.
+The reference dependency baseline is `google-adk>=2.11`, `fastapi>=0.141`, `uvicorn>=0.54`, `pydantic>=2.14`, `python-dotenv>=1.2`, and `httpx>=0.28` on Python 3.14. These minimum versions were validated on Python 3.14.7 (the original source used older minimums), not a production compatibility guarantee. A release should use a validated, reproducible dependency lock and verify current ADK and A2UI interfaces.
 
 ## 2. TravelCoordinator
 
@@ -122,7 +122,7 @@ The coordinator is responsible for presenting a coherent response, but it must n
 
 | Component | Choice | Rationale |
 | --- | --- | --- |
-| Agent and model | Google ADK `LlmAgent`, `gemini-2.5-flash` | Interprets natural-language requests and determines which specialists are relevant. |
+| Agent and model | Google ADK `LlmAgent`, `gemini-3.5-flash-lite` | Interprets natural-language requests and determines which specialists are relevant. |
 | Orchestration | Google ADK `sub_agents` | Preserves the reference architecture, in which `attractions_agent` and `dining_agent` are registered as sub-agents of `coordinator_agent`. |
 | Execution | Google ADK `Runner.run_async` | Executes the coordinator asynchronously and exposes events for response collection. |
 | Session management | `InMemorySessionService` | Associates execution with the supplied `user_id` and `session_id` during prototype use. |
@@ -138,7 +138,7 @@ Deployment considerations: Run the FastAPI application under Uvicorn with manage
 
 ### Sequence Diagram
 
-The original contains a sequence diagram of the coordinator's main responsibilities (diagram omitted here). Participants: User, FastAPI `/api/chat`, ADK Runner, TravelCoordinator, AttractionsSpecialist, DiningSpecialist, Gemini 2.5 Flash. Flow, in order:
+The original contains a sequence diagram of the coordinator's main responsibilities (diagram omitted here). Participants: User, FastAPI `/api/chat`, ADK Runner, TravelCoordinator, AttractionsSpecialist, DiningSpecialist, Gemini 3.5 Flash-Lite. Flow, in order:
 
 1. User sends `POST /api/chat`.
 2. FastAPI calls `run_async(user_id, session_id, content)` on the ADK Runner.
@@ -167,7 +167,7 @@ The specialist's responsibility is limited to attraction recommendations. It doe
 
 | Component | Choice | Rationale |
 | --- | --- | --- |
-| Agent and model | Google ADK `LlmAgent`, `gemini-2.5-flash` | Interprets attraction-related instructions and uses the registered lookup tool. |
+| Agent and model | Google ADK `LlmAgent`, `gemini-3.5-flash-lite` | Interprets attraction-related instructions and uses the registered lookup tool. |
 | Orchestration | `TravelCoordinator` through Google ADK `sub_agents` | Keeps sightseeing behavior specialized while allowing the coordinator to combine results with dining recommendations. |
 | Tool | `search_attractions(city, category)` | Encapsulates attraction lookup and returns the data required for recommendation cards. |
 | Data source | In-memory Python mock dictionary | Provides deterministic demonstration data without external APIs or credentials for an attraction provider. |
@@ -182,7 +182,7 @@ Deployment considerations: The specialist executes inside the shared ADK runner 
 
 ### Sequence Diagram
 
-The original contains a sequence diagram (omitted here). Participants: TravelCoordinator, AttractionsSpecialist, Gemini 2.5 Flash, `search_attractions(city, category)`, Mock Attraction Data. Flow:
+The original contains a sequence diagram (omitted here). Participants: TravelCoordinator, AttractionsSpecialist, Gemini 3.5 Flash-Lite, `search_attractions(city, category)`, Mock Attraction Data. Flow:
 
 1. The coordinator delegates the sightseeing request to the specialist.
 2. The specialist interprets the request and selects the tool (using Gemini).
@@ -208,7 +208,7 @@ The specialist recommends dining options; it does not verify real-time restauran
 
 | Component | Choice | Rationale |
 | --- | --- | --- |
-| Agent and model | Google ADK `LlmAgent`, `gemini-2.5-flash` | Interprets dining-related instructions and invokes the restaurant lookup tool. |
+| Agent and model | Google ADK `LlmAgent`, `gemini-3.5-flash-lite` | Interprets dining-related instructions and invokes the restaurant lookup tool. |
 | Orchestration | `TravelCoordinator` through Google ADK `sub_agents` | Allows dining recommendations to participate in combined travel responses without duplicating coordinator logic. |
 | Tool | `find_restaurants(city, cuisine)` | Encapsulates restaurant discovery and returns records suitable for dining cards. |
 | Data source | In-memory Python mock dictionary | Supplies predictable destination-specific recommendations without a live restaurant provider. |
@@ -223,7 +223,7 @@ Deployment considerations: The dining specialist shares the coordinator's Gemini
 
 ### Sequence Diagram
 
-The original contains a sequence diagram (omitted here). Participants: TravelCoordinator, DiningSpecialist, Gemini 2.5 Flash, `find_restaurants(city, cuisine)`, Mock Restaurant Data. Flow:
+The original contains a sequence diagram (omitted here). Participants: TravelCoordinator, DiningSpecialist, Gemini 3.5 Flash-Lite, `find_restaurants(city, cuisine)`, Mock Restaurant Data. Flow:
 
 1. The coordinator delegates the food or dining request to the specialist.
 2. The specialist interprets the request and selects the tool (using Gemini).
@@ -241,7 +241,7 @@ Payload requirement: The specialist returns `a2ui_surface: "main_view"` and a co
 
 For a representative request such as "Plan a day in Tokyo with sightseeing and dinner," the system should route the sightseeing intent to `AttractionsSpecialist` and the dining intent to `DiningSpecialist`. `TravelCoordinator` combines the available results, and the FastAPI layer returns the agent text and A2UI payload.
 
-The original contains an end-to-end sequence diagram (omitted here). Participants: Traveler, FastAPI `main.py`, InMemorySessionService, Google ADK Runner, TravelCoordinator, Gemini 2.5 Flash, AttractionsSpecialist, `search_attractions`, DiningSpecialist, `find_restaurants`. Flow:
+The original contains an end-to-end sequence diagram (omitted here). Participants: Traveler, FastAPI `main.py`, InMemorySessionService, Google ADK Runner, TravelCoordinator, Gemini 3.5 Flash-Lite, AttractionsSpecialist, `search_attractions`, DiningSpecialist, `find_restaurants`. Flow:
 
 1. Traveler sends `POST /api/chat`.
 2. FastAPI calls `create_session(user_id, session_id)` and then `run_async(user_id, session_id, content)` on the Runner.
@@ -443,4 +443,4 @@ The implementation should retain the existing module boundaries:
 
 No separate microservices, alternative orchestration framework, replacement model, or unrelated storage architecture is required for this release. Production data providers, durable session storage, authentication, numeric service-level objectives, and booking capabilities remain explicit follow-on decisions.
 
-Final product decision: Preserve the Python FastAPI, Google ADK, Gemini `gemini-2.5-flash`, and A2UI architecture as the implementation baseline. Prioritize reliable delegation, correct result aggregation, predictable API responses, and schema compatibility before expanding the concierge into a live booking or itinerary-management product.
+Final product decision: Preserve the Python FastAPI, Google ADK, Gemini `gemini-3.5-flash-lite`, and A2UI architecture as the implementation baseline. Prioritize reliable delegation, correct result aggregation, predictable API responses, and schema compatibility before expanding the concierge into a live booking or itinerary-management product.
