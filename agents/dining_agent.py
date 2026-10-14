@@ -23,7 +23,7 @@ async def find_restaurants(city: str, cuisine: str = "local") -> dict:
         result = await get_provider().get_restaurants(city, cuisine)
     except Exception:
         logger.exception("find_restaurants failed")
-        return {"status": "error", "message": "Dining data is currently unavailable."}
+        return {"status": "error", "unavailable": "dining", "message": "Dining data is currently unavailable."}
     output = {
         "status": "success",
         "data_source": result.source,

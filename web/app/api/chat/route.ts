@@ -37,7 +37,20 @@ export async function POST(request: Request) {
       cache: "no-store",
     });
     if (!upstream.ok) {
-      return fail("The assistant could not answer right now. Please try again.", 502);
+      const messages: Record<number, string> = {
+        401: "The chat service is not authorised. Check the server configuration.",
+        429: "Too many requests. Please wait a moment and try again.",
+        504: "The assistant took too long to answer. Please try again.",
+      };
+      const detail = await upstream.json().catch(() => ({}));
+      const correlationId = typeof detail?.correlation_id === "string" ? detail.correlation_id : undefined;
+      return Response.json(
+        {
+          error: messages[upstream.status] ?? "The assistant could not answer right now. Please try again.",
+          correlation_id: correlationId,
+        },
+        { status: upstream.status === 429 ? 429 : 502 },
+      );
     }
     return Response.json(await upstream.json());
   } catch (error) {

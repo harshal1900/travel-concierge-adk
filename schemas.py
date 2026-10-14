@@ -61,8 +61,35 @@ def merge_components(tool_results: list[Any]) -> list[dict[str, Any]]:
     return ordered + list(merged.values())
 
 
+UNAVAILABLE_LABELS = {"attractions": "Attractions", "dining": "Dining"}
+DEMO_NOTE = "Note: these are demo records, not live data."
+ATTRIBUTION_NOTE = "Source: Google Maps."
+
+
+def routing_of(tool_results: list[Any]) -> list[str]:
+    """Component IDs actually returned by specialists (used for logs)."""
+    return [c["id"] for c in merge_components(tool_results)]
+
+
+def label_notes(agent_text: str, tool_results: list[Any]) -> str:
+    """Append deterministic notes: unavailable specialists, demo data, Google attribution."""
+    results = [r for r in tool_results if isinstance(r, dict)]
+    notes = []
+    failed = [r.get("unavailable") for r in results if r.get("status") == "error"]
+    labels = sorted({UNAVAILABLE_LABELS[f] for f in failed if f in UNAVAILABLE_LABELS})
+    if labels:
+        notes.append(f"Note: {' and '.join(labels)} recommendations are currently unavailable.")
+    sources = {r.get("data_source") for r in results if r.get("components")}
+    if "mock" in sources and "demo" not in agent_text.lower():
+        notes.append(DEMO_NOTE)
+    if "google_places" in sources:
+        notes.append(ATTRIBUTION_NOTE)
+    return "\n\n".join([agent_text, *notes]) if agent_text else "\n\n".join(notes)
+
+
 def build_response(agent_text: str, tool_results: list[Any]) -> ChatResponse:
     """Validate merged components; fall back to a TextCard if none are valid."""
+    agent_text = label_notes(agent_text, tool_results)
     try:
         components = merge_components(tool_results)
         if components:

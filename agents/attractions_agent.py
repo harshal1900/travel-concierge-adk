@@ -23,7 +23,7 @@ async def search_attractions(city: str, category: str = "sightseeing") -> dict:
         result = await get_provider().get_attractions(city, category)
     except Exception:
         logger.exception("search_attractions failed")
-        return {"status": "error", "message": "Attractions data is currently unavailable."}
+        return {"status": "error", "unavailable": "attractions", "message": "Attractions data is currently unavailable."}
     output = {
         "status": "success",
         "data_source": result.source,

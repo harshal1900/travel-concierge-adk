@@ -30,3 +30,12 @@ Set `DATA_PROVIDER=google_places` and `PLACES_API_KEY` (restrict the key to Plac
 
 ## Web client
 See `web/README.md`. Start the API on port 8000, then `cd web && npm run dev`.
+
+## Security and operations
+- `APP_ENV=production` requires `SERVICE_API_KEY`; clients send it as `X-API-Key`. The app also refuses to start if the Gemini key is missing, or if `DATA_PROVIDER=google_places` has no `PLACES_API_KEY`.
+- `message` is 1 to 2000 characters; `user_id` and `session_id` are at most 64.
+- `RATE_LIMIT` (for example `30/minute`) is enforced in-process per API key (or per client address without a key). It is process-local, matching the single-instance, in-memory-session design.
+- `REQUEST_TIMEOUT_SECONDS` bounds one agent run (504 on timeout). Errors return a short message plus a `correlation_id` (also the `X-Correlation-ID` header); stack traces stay in server logs.
+- CORS only allows the origins in `ALLOWED_ORIGINS`.
+- Each request writes one JSON log line (correlation ID, user_id, session_id, routing, latency, status).
+- If one specialist fails, the other's cards are still returned and `agent_text` says what is unavailable. Demo records are always labelled.

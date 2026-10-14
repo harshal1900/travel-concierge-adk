@@ -27,7 +27,7 @@ def test_missing_message_422():
 def test_combined(monkeypatch):
     monkeypatch.setattr(main, "run_turn", fake_turn("ok", [asyncio.run(search_attractions("tokyo")), asyncio.run(find_restaurants("tokyo"))]))
     body = client.post("/api/chat", json={"message": "tokyo sightseeing and dinner"}).json()
-    assert body["status"] == "success" and body["agent_text"] == "ok"
+    assert body["status"] == "success" and body["agent_text"].startswith("ok") and "demo records" in body["agent_text"]
     assert [c["id"] for c in body["a2ui_payload"]["components"]] == ["attractions_card_list", "dining_card_list"]
 
 

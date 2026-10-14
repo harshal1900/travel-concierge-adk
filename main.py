@@ -1,18 +1,24 @@
 """FastAPI entry point: routes, ADK runner/session lifecycle, event extraction, error mapping."""
 
+import asyncio
 import logging
 from contextlib import asynccontextmanager
 from typing import Any
 
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from google.adk.runners import Runner
 from google.adk.sessions import InMemorySessionService
 from google.genai import types
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from agents.coordinator import travel_coordinator
 from config import settings
-from schemas import ChatResponse, build_response
+from observability import configure_logging, correlation_middleware
+from schemas import ChatResponse, build_response, routing_of
+from security import guard
 
 logger = logging.getLogger(__name__)
 
@@ -30,18 +36,37 @@ runner = Runner(
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
-    if not settings.google_api_key:
-        raise RuntimeError("GOOGLE_API_KEY is not set; copy .env.example to .env and add your key.")
+    problems = settings.validate()
+    if problems:
+        raise RuntimeError("Invalid configuration: " + "; ".join(problems))
     yield
 
 
+configure_logging()
 app = FastAPI(title="Smart Travel & Local Experience Concierge", lifespan=lifespan)
+app.middleware("http")(correlation_middleware)
+if settings.allowed_origins:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=settings.allowed_origins,
+        allow_methods=["POST", "GET"],
+        allow_headers=["Content-Type", "X-API-Key"],
+    )
+
+
+@app.exception_handler(StarletteHTTPException)
+async def http_error(request: Request, exc: StarletteHTTPException) -> JSONResponse:
+    return JSONResponse(
+        {"detail": exc.detail, "correlation_id": getattr(request.state, "correlation_id", None)},
+        status_code=exc.status_code,
+        headers=getattr(exc, "headers", None),
+    )
 
 
 class ChatRequest(BaseModel):
-    user_id: str = "demo_user"
-    session_id: str = "session_001"
-    message: str
+    user_id: str = Field(default="demo_user", max_length=64)
+    session_id: str = Field(default="session_001", max_length=64)
+    message: str = Field(min_length=1, max_length=2000)
 
 
 async def run_turn(request: ChatRequest) -> tuple[str, list[Any]]:
@@ -66,11 +91,17 @@ async def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
-@app.post("/api/chat", response_model=ChatResponse)
-async def chat(request: ChatRequest) -> ChatResponse:
+@app.post("/api/chat", response_model=ChatResponse, dependencies=[Depends(guard)])
+async def chat(chat_request: ChatRequest, request: Request) -> ChatResponse:
+    request.state.log.update(user_id=chat_request.user_id, session_id=chat_request.session_id)
     try:
-        agent_text, tool_results = await run_turn(request)
+        async with asyncio.timeout(settings.request_timeout_seconds):
+            agent_text, tool_results = await run_turn(chat_request)
+    except TimeoutError:
+        logger.warning("Chat turn timed out")
+        raise HTTPException(status_code=504, detail="The assistant took too long to answer. Please try again.")
     except Exception:
         logger.exception("Chat turn failed")
         raise HTTPException(status_code=500, detail="Something went wrong. Please try again.")
+    request.state.log["routing"] = routing_of(tool_results)
     return build_response(agent_text, tool_results)

@@ -41,4 +41,20 @@ class Settings:
         )
 
 
+    def validate(self) -> list[str]:
+        """Return startup problems; an empty list means the configuration is usable."""
+        problems = []
+        model = self.llm_model
+        uses_gemini_key = "/" not in model or model.startswith(("models/", "projects/", "publishers/"))
+        if uses_gemini_key and not self.google_api_key:
+            problems.append("GOOGLE_API_KEY is required for the configured Gemini model")
+        if self.data_provider == "google_places" and not self.places_api_key:
+            problems.append("PLACES_API_KEY is required when DATA_PROVIDER=google_places")
+        if self.data_provider not in {"mock", "google_places"}:
+            problems.append(f"Unsupported DATA_PROVIDER: {self.data_provider!r}")
+        if self.app_env == "production" and not self.service_api_key:
+            problems.append("SERVICE_API_KEY is required when APP_ENV=production")
+        return problems
+
+
 settings = Settings.from_env()
