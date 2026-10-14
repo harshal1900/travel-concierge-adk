@@ -1,0 +1,15 @@
+{
+  "tokyo": [
+    {"title": "Ichiran Ramen", "cuisine": "Ramen", "rating": "4.9", "price": "$$"},
+    {"title": "Sukiyabashi Jiro Sushi", "cuisine": "Sushi", "rating": "4.9", "price": "$$$$"},
+    {"title": "Tempura Kondo", "cuisine": "Tempura", "rating": "4.7", "price": "$$$"}
+  ],
+  "paris": [
+    {"title": "Le Comptoir du Relais", "cuisine": "French", "rating": "4.6", "price": "$$$"},
+    {"title": "Breizh Café", "cuisine": "Crêperie", "rating": "4.5", "price": "$$"},
+    {"title": "L'As du Fallafel", "cuisine": "Middle Eastern", "rating": "4.6", "price": "$"}
+  ],
+  "_default": [
+    {"title": "Local Bistro", "cuisine": "Local", "rating": "4.4", "price": "$$"}
+  ]
+}

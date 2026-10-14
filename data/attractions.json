@@ -1,0 +1,15 @@
+{
+  "tokyo": [
+    {"title": "Senso-ji Temple", "type": "Culture", "rating": "4.8", "cost": "Free"},
+    {"title": "Tokyo Skytree", "type": "Views", "rating": "4.6", "cost": "$25"},
+    {"title": "Meiji Jingu Shrine", "type": "Culture", "rating": "4.7", "cost": "Free"}
+  ],
+  "paris": [
+    {"title": "Louvre Museum", "type": "Museum", "rating": "4.7", "cost": "$20"},
+    {"title": "Eiffel Tower", "type": "Landmark", "rating": "4.6", "cost": "$30"},
+    {"title": "Notre-Dame Cathedral", "type": "Monument", "rating": "4.7", "cost": "Free"}
+  ],
+  "_default": [
+    {"title": "City Center Walk", "type": "Sightseeing", "rating": "4.5", "cost": "Free"}
+  ]
+}
