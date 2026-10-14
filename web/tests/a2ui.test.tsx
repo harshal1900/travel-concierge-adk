@@ -40,8 +40,10 @@ describe("ComponentRenderer", () => {
     expect(screen.getByText("Senso-ji Temple")).toBeInTheDocument();
     expect(screen.getByText("Sukiyabashi Jiro Sushi")).toBeInTheDocument();
     expect(screen.getAllByRole("listitem")).toHaveLength(4);
-    expect(screen.getByText("Cost: Free")).toBeInTheDocument();
-    expect(screen.getByText("Price: $$")).toBeInTheDocument();
+    expect(screen.getAllByText("Cost")).toHaveLength(2);
+    expect(screen.getAllByText("Price")).toHaveLength(2);
+    expect(screen.getAllByText("Free")).toHaveLength(1);
+    expect(screen.getByText("$$$$")).toBeInTheDocument();
   });
 
   it("renders only dining when only dining is returned", () => {
@@ -63,7 +65,7 @@ describe("ComponentRenderer", () => {
       />,
     );
     expect(screen.getByText("<b>x</b>")).toBeInTheDocument();
-    expect(screen.getByText("Rating: Not listed", { exact: false })).toBeInTheDocument();
+    expect(screen.getAllByText("Not listed")).toHaveLength(2); // rating and cost
     expect(document.querySelector("img")).toBeNull();
   });
 });
