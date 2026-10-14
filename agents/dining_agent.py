@@ -4,6 +4,7 @@ import logging
 
 from google.adk.agents import LlmAgent
 
+from agents.models import build_model
 from config import settings
 from providers import get_provider
 from schemas import DINING_ID
@@ -11,7 +12,7 @@ from schemas import DINING_ID
 logger = logging.getLogger(__name__)
 
 
-def find_restaurants(city: str, cuisine: str = "local") -> dict:
+async def find_restaurants(city: str, cuisine: str = "local") -> dict:
     """Find recommended restaurants in a city.
 
     Args:
@@ -19,33 +20,36 @@ def find_restaurants(city: str, cuisine: str = "local") -> dict:
         cuisine: Cuisine type, e.g. "sushi" or "local".
     """
     try:
-        items = get_provider().get_restaurants(city, cuisine)
+        result = await get_provider().get_restaurants(city, cuisine)
     except Exception:
         logger.exception("find_restaurants failed")
         return {"status": "error", "message": "Dining data is currently unavailable."}
-    return {
+    output = {
         "status": "success",
-        "data_source": settings.data_provider,
+        "data_source": result.source,
         "a2ui_surface": "main_view",
         "components": [
             {
                 "id": DINING_ID,
                 "type": "CardList",
                 "title": f"Recommended Dining in {city.strip().title()}",
-                "items": items,
+                "items": result.items,
             }
         ],
     }
+    if result.fallback_reason:
+        output["demo_fallback"] = True
+    return output
 
 
 dining_agent = LlmAgent(
     name="DiningSpecialist",
     description="Handles food, restaurant and dining requests.",
-    model=settings.llm_model,
+    model=build_model(settings.llm_model),
     instruction=(
         "You recommend restaurants. Call find_restaurants with the city (and cuisine if given) "
         "and briefly summarise only the places the tool returned; never invent places, ratings or prices. "
-        "If data_source is 'mock', say these are demo records. If the tool returns an error, say dining "
+        "If data_source is 'mock', say these are demo records. Mention that live data was unavailable ONLY if the tool result contains demo_fallback: true. If data_source is 'google_places', say the results come from Google Maps. If the tool returns an error, say dining "
         "is currently unavailable. If the user's request also asks about sightseeing, museums or monuments "
         "and attractions were not yet provided in this conversation turn, transfer to AttractionsSpecialist "
         "after you finish; otherwise answer and stop."

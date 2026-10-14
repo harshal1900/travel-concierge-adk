@@ -1,3 +1,4 @@
+import asyncio
 from agents.attractions_agent import search_attractions
 from agents.dining_agent import find_restaurants
 from schemas import build_response, merge_components
@@ -8,21 +9,21 @@ def ids(resp):
 
 
 def test_merge_both_in_order():
-    resp = build_response("hi", [find_restaurants("tokyo"), search_attractions("tokyo")])
+    resp = build_response("hi", [asyncio.run(find_restaurants("tokyo")), asyncio.run(search_attractions("tokyo"))])
     assert ids(resp) == ["attractions_card_list", "dining_card_list"]
 
 
 def test_single_specialist():
-    assert ids(build_response("hi", [find_restaurants("tokyo")])) == ["dining_card_list"]
+    assert ids(build_response("hi", [asyncio.run(find_restaurants("tokyo"))])) == ["dining_card_list"]
 
 
 def test_failed_specialist_keeps_other():
     err = {"status": "error", "message": "unavailable"}
-    assert ids(build_response("hi", [search_attractions("tokyo"), err])) == ["attractions_card_list"]
+    assert ids(build_response("hi", [asyncio.run(search_attractions("tokyo")), err])) == ["attractions_card_list"]
 
 
 def test_dedup_by_id():
-    r = search_attractions("tokyo")
+    r = asyncio.run(search_attractions("tokyo"))
     assert len(merge_components([r, r])) == 1
 
 

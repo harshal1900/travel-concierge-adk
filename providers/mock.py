@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 
 from config import settings
+from providers.base import ProviderResult
 
 DEFAULT_KEY = "_default"
 
@@ -17,8 +18,8 @@ class MockProvider:
             records = json.load(f)
         return list(records.get(city.strip().lower()) or records[DEFAULT_KEY])
 
-    def get_attractions(self, city: str, category: str) -> list[dict[str, str]]:
-        return self._load("attractions.json", city)
+    async def get_attractions(self, city: str, category: str) -> ProviderResult:
+        return ProviderResult(self._load("attractions.json", city), "mock")
 
-    def get_restaurants(self, city: str, cuisine: str) -> list[dict[str, str]]:
-        return self._load("restaurants.json", city)
+    async def get_restaurants(self, city: str, cuisine: str) -> ProviderResult:
+        return ProviderResult(self._load("restaurants.json", city), "mock")

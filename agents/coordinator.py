@@ -4,12 +4,13 @@ from google.adk.agents import LlmAgent
 
 from agents.attractions_agent import attractions_agent
 from agents.dining_agent import dining_agent
+from agents.models import build_model
 from config import settings
 
 travel_coordinator = LlmAgent(
     name="TravelCoordinator",
     description="Routes travel requests to the right specialist.",
-    model=settings.llm_model,
+    model=build_model(settings.llm_model),
     instruction=(
         "You coordinate travel recommendations. Route sightseeing, museum and monument requests to "
         "AttractionsSpecialist and food, restaurant and dining requests to DiningSpecialist. When a "

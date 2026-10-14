@@ -1,0 +1,5 @@
+{"places": [
+  {"displayName": {"text": "Sample Sushi"}, "primaryTypeDisplayName": {"text": "Sushi restaurant"}, "rating": 4.8, "priceLevel": "PRICE_LEVEL_VERY_EXPENSIVE"},
+  {"displayName": {"text": "Sample Ramen"}, "primaryTypeDisplayName": {"text": "Ramen restaurant"}, "rating": 4.5, "priceLevel": "PRICE_LEVEL_MODERATE"},
+  {"displayName": {"text": "Sample Stall"}, "rating": 4.1}
+]}

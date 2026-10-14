@@ -1,3 +1,4 @@
+import asyncio
 import pytest
 from fastapi.testclient import TestClient
 
@@ -24,14 +25,14 @@ def test_missing_message_422():
 
 
 def test_combined(monkeypatch):
-    monkeypatch.setattr(main, "run_turn", fake_turn("ok", [search_attractions("tokyo"), find_restaurants("tokyo")]))
+    monkeypatch.setattr(main, "run_turn", fake_turn("ok", [asyncio.run(search_attractions("tokyo")), asyncio.run(find_restaurants("tokyo"))]))
     body = client.post("/api/chat", json={"message": "tokyo sightseeing and dinner"}).json()
     assert body["status"] == "success" and body["agent_text"] == "ok"
     assert [c["id"] for c in body["a2ui_payload"]["components"]] == ["attractions_card_list", "dining_card_list"]
 
 
 def test_dining_only(monkeypatch):
-    monkeypatch.setattr(main, "run_turn", fake_turn("ok", [find_restaurants("tokyo")]))
+    monkeypatch.setattr(main, "run_turn", fake_turn("ok", [asyncio.run(find_restaurants("tokyo"))]))
     body = client.post("/api/chat", json={"message": "sushi"}).json()
     assert [c["id"] for c in body["a2ui_payload"]["components"]] == ["dining_card_list"]
 

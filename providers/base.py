@@ -1,9 +1,17 @@
-"""Data-provider interface shared by the mock and (later) Google Places providers."""
+"""Data-provider interface shared by the mock and Google Places providers."""
 
+from dataclasses import dataclass
 from typing import Protocol
 
 
-class PlacesProvider(Protocol):
-    def get_attractions(self, city: str, category: str) -> list[dict[str, str]]: ...
+@dataclass(frozen=True)
+class ProviderResult:
+    items: list[dict[str, str]]
+    source: str  # "mock" or "google_places"
+    fallback_reason: str | None = None  # set when mock records replaced a failed live lookup
 
-    def get_restaurants(self, city: str, cuisine: str) -> list[dict[str, str]]: ...
+
+class PlacesProvider(Protocol):
+    async def get_attractions(self, city: str, category: str) -> ProviderResult: ...
+
+    async def get_restaurants(self, city: str, cuisine: str) -> ProviderResult: ...

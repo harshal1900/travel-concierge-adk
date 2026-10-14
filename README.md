@@ -21,3 +21,12 @@ Returns `{status, agent_text, a2ui_payload}`; a combined request returns both `a
 - `DATA_PROVIDER=mock` (default) reads demo records from `data/*.json` (Tokyo, Paris, generic fallback). Ratings and prices are demo data, not live facts. A new city only needs a JSON entry.
 - Sessions use `InMemorySessionService`: process-local, reset on restart.
 - Tests: `python -m pytest` (deterministic, no network or API key needed).
+
+## Live data (optional): Google Places
+Set `DATA_PROVIDER=google_places` and `PLACES_API_KEY` (restrict the key to Places API (New)). The provider uses Text Search with a field mask including `rating` and `priceLevel`, which bills at the Enterprise SKU (check the current free allowance and pricing). Places content is not cached, per Google Maps Platform terms, and live results must be attributed to Google Maps in the client. On any error, timeout or empty result the API returns demo records and says so in `agent_text`.
+
+## Other LLMs (untested)
+`LLM_MODEL` accepts a Gemini name (tested) or a LiteLLM `provider/model` string. For the latter run `pip install -r requirements-litellm.txt` and set that provider's own API key variable. Only Gemini is tested.
+
+## Web client
+See `web/README.md`. Start the API on port 8000, then `cd web && npm run dev`.
